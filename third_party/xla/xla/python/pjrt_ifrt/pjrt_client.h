@@ -151,6 +151,11 @@ class PjRtClient final
       Shape shape, std::shared_ptr<const Sharding> sharding,
       absl::Span<tsl::RCReference<Array>> arrays,
       ArrayCopySemantics semantics) override;
+  absl::StatusOr<tsl::RCReference<Array>> AssembleArrayFromSingleDeviceArrays(
+      Shape shape, std::shared_ptr<const Sharding> sharding,
+      absl::Span<tsl::RCReference<Array>> arrays,
+      ArrayCopySemantics array_copy_semantics,
+      SingleDeviceShardSemantics single_device_shard_semantics) override;
 
   absl::StatusOr<std::vector<tsl::RCReference<Array>>> CopyArrays(
       absl::Span<tsl::RCReference<Array>> arrays,
@@ -206,6 +211,12 @@ class PjRtClient final
     return addressable_devices_;
   }
   int process_index() const override { return pjrt_client_->process_index(); }
+
+  absl::Span<Device* const> GetAllDevices() const override {
+    DCHECK(this);
+    return devices_;
+  }
+
   absl::StatusOr<DeviceAssignment> GetDefaultDeviceAssignment(
       int num_replicas, int num_partitions) const override {
     DCHECK(this);
