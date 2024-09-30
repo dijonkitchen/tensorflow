@@ -279,7 +279,8 @@ std::string PinnedAllocation::ToString() const {
       memory_space() == MemorySpace::kDefault ? "def" : "alt";
   std::optional<HeapSimulator::Chunk> chunk = maybe_chunk();
   if (chunk) {
-    absl::StrAppend(&memory_space_str, " (off: ", chunk->offset, ")");
+    absl::StrAppend(&memory_space_str, " (off: ", chunk->offset,
+                    ", size: ", chunk->size, ")");
   }
   return absl::StrCat((is_scoped_allocation() ? "Scoped " : ""),
                       "PinnedAllocation in ", memory_space_str, " defined at ",
@@ -367,7 +368,8 @@ std::string CopyAllocation::ToString() const {
       memory_space() == MemorySpace::kDefault ? "def" : "alt";
   std::optional<HeapSimulator::Chunk> chunk = maybe_chunk();
   if (chunk) {
-    absl::StrAppend(&memory_space_str, " (off: ", chunk->offset, ")");
+    absl::StrAppend(&memory_space_str, " (off: ", chunk->offset,
+                    ", size: ", chunk->size, ")");
   }
   return absl::StrCat("Copy Allocation in ", memory_space_str,
                       ", start_time:", start_time(), ", end_time:", end_time(),
