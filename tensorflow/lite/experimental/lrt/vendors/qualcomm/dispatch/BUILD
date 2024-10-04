@@ -17,32 +17,17 @@ package(
     default_visibility = ["//tensorflow/lite/experimental/lrt:__subpackages__"],
 )
 
-cc_test(
-    name = "tensor_buffer_test",
+cc_library(
+    name = "dispatch_api",
     srcs = [
-        "tensor_buffer_test.cc",
+        "dispatch_api.cc",
+        "lrt_dispatch_device_context.cc",
+        "lrt_dispatch_invocation_context.cc",
     ],
-    linkopts = select({
-        "//tools/cc_target_os:android": ["-landroid"],
-        "//conditions:default": [],
-    }),
-    deps = [
-        "//tensorflow/lite/experimental/lrt/c:lite_rt_c_api",
-        "//tensorflow/lite/experimental/lrt/c:lite_rt_tensor_buffer_c_api",
-        "//tensorflow/lite/experimental/lrt/core:tensor_buffer",
-        "@com_google_absl//absl/log",
-        "@com_google_absl//absl/log:absl_log",
-        "@com_google_googletest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "dispatch_api_qualcomm_test",
-    srcs = [
-        "dispatch_api_qualcomm_test.cc",
-    ],
-    data = [
-        "//tensorflow/lite/experimental/lrt/vendors/qualcomm/dispatch:dispatch_api_shared",
+    hdrs = [
+        "lrt_dispatch_device_context.h",
+        "lrt_dispatch_invocation_context.h",
+        "registry.h",
     ],
     linkopts = select({
         "//tools/cc_target_os:android": ["-landroid"],
@@ -52,12 +37,22 @@ cc_test(
         "//tensorflow/lite/experimental/lrt/c:lite_rt_c_api",
         "//tensorflow/lite/experimental/lrt/c:lite_rt_dispatch_c_api",
         "//tensorflow/lite/experimental/lrt/c:lite_rt_tensor_buffer_c_api",
-        "//tensorflow/lite/experimental/lrt/core:dispatch",
+        "//tensorflow/lite/experimental/lrt/core:logging",
         "//tensorflow/lite/experimental/lrt/core:tensor_buffer",
-        "//tensorflow/lite/experimental/lrt/test:common",
-        "//tensorflow/lite/experimental/lrt/test:simple_model",
+        "//tensorflow/lite/experimental/lrt/core:utils",
+        "//tensorflow/lite/experimental/lrt/vendors/qualcomm:qnn",
+        "//third_party/qairt:qnn_lib_headers",
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/log:absl_log",
-        "@com_google_googletest//:gtest_main",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/strings:string_view",
     ],
+)
+
+cc_shared_library(
+    name = "dispatch_api_shared",
+    shared_lib_name = "liblrtdispatch.so",
+    visibility = ["//visibility:public"],
+    deps = [":dispatch_api"],
 )
