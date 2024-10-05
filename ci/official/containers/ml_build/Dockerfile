@@ -2,6 +2,8 @@
 FROM ubuntu:22.04@sha256:58b87898e82351c6cf9cf5b9f3c20257bb9e2dcf33af051e12ce532d7f94e3fe AS devel
 ################################################################################
 
+RUN echo "test"
+
 # Install devtoolset build dependencies
 COPY setup.sources.sh /setup.sources.sh
 COPY setup.packages.sh /setup.packages.sh
