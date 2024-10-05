@@ -41,6 +41,18 @@ namespace xla {
 
 using MemorySpaceColor = int;
 
+// Properties of a single module argument or result.
+struct ArgumentLayoutProperties {
+  LayoutMode mode;
+  MemorySpaceColor memory_space;
+};
+
+// Properties of all arguments and results of a module.
+struct ModuleLayoutProperties {
+  std::vector<ArgumentLayoutProperties> arg_layout_properties;
+  std::vector<ArgumentLayoutProperties> out_layout_properties;
+};
+
 // Returns the num_replicas, num_partitions and device assignment given a
 // ExecutableBuildOptions and whether we want a portable executable.
 absl::Status ParseDeviceAssignmentCompileOptions(
@@ -50,65 +62,20 @@ absl::Status ParseDeviceAssignmentCompileOptions(
     int* num_replicas, int* num_partitions,
     std::shared_ptr<DeviceAssignment>* device_assignment);
 
-// Returns the LayoutMode for each argument of the main function in the
-// module. Checks for the "mhlo.layout_mode" attr, and if not present, assumes
-// LayoutMode::Mode::kDefault.
-absl::StatusOr<std::vector<LayoutMode>> GetArgLayoutModes(
-    mlir::ModuleOp module);
-// Returns the LayoutMode for each output of the main function in the
-// module. Checks for the "mhlo.layout_mode" attr, and if not present, assumes
-// LayoutMode::Mode::kDefault.
-absl::StatusOr<std::vector<LayoutMode>> GetOutputLayoutModes(
+// Fetches the layout properties from the MLIR module attributes.
+absl::StatusOr<ModuleLayoutProperties> GetModuleLayoutProperties(
     mlir::ModuleOp module);
 
-// Returns the memory space for each argument of the computations. Checks
-// for the "mhlo.memory_kind" frontend attribute, and if not present, assumes 0.
-absl::StatusOr<std::vector<MemorySpaceColor>> GetArgMemoryKinds(
-    mlir::ModuleOp module);
-// Returns the memory space for each output of the computations. Checks for
-// the "mhlo.memory_kind" frontend attribute, and if not present, assumes 0.
-absl::StatusOr<std::vector<MemorySpaceColor>> GetOutputMemoryKinds(
-    mlir::ModuleOp module);
-
-// Populates the frontend attributes "arg_layout_mode" and "out_layout_mode" in
-// xla_computation based on `module`. This function must be called before the
-// LayoutMode getters below work correctly on `computation`.
-absl::Status AddLayoutModesToFrontendAttrs(mlir::ModuleOp module,
-                                           XlaComputation& xla_computation);
-
-// Populates the frontend attributes "arg_memory_kinds" and "out_memory_kinds"
-// in xla_computation based on `module`. This function must be called before the
-// LayoutMode getters below work correctly on `computation`.
-absl::Status AddMemoryKindsToFrontendAttrs(mlir::ModuleOp module,
-                                           XlaComputation& xla_computation);
-
-// Returns the LayoutMode for each argument of the computations. Checks for the
-// "arg_layout_mode" frontend attribute, and if not present, assumes
-// LayoutMode::Mode::kDefault.
-absl::StatusOr<std::vector<LayoutMode>> GetArgLayoutModes(
-    const XlaComputation& computation);
-// Returns the LayoutMode for each argument of the computations. Checks for the
-// "out_layout_mode" frontend attribute, and if not present, assumes
-// LayoutMode::Mode::kDefault.
-absl::StatusOr<std::vector<LayoutMode>> GetOutputLayoutModes(
-    const XlaComputation& computation);
-
-// Returns the memory space for each argument of the computations. Checks for
-// the "arg_memory_kind" frontend attribute, and if not present, assumes 0.
-absl::StatusOr<std::vector<MemorySpaceColor>> GetArgMemoryKinds(
-    const XlaComputation& computation);
-// Returns the memory space for each argument of the computations. Checks for
-// the "out_memory_kind" frontend attribute, and if not present, assumes 0.
-absl::StatusOr<std::vector<MemorySpaceColor>> GetOutputMemoryKinds(
+// Fetches the layout properties from the frontend attributes of an HLO module.
+absl::StatusOr<ModuleLayoutProperties>
+GetModuleLayoutPropertiesFromFrontendAttributes(
     const XlaComputation& computation);
 
 // Returns (arg shapes, output shape) with properly-set Layouts that can
 // be passed to XLA to reflect arg_layout_modes and out_layout_modes.
 absl::StatusOr<std::pair<std::vector<Shape>, Shape>> LayoutModesToXlaShapes(
-    const XlaComputation& computation, std::vector<LayoutMode> arg_layout_modes,
-    std::vector<LayoutMode> out_layout_modes,
-    const std::vector<MemorySpaceColor>& arg_memory_spaces,
-    const std::vector<MemorySpaceColor>& out_memory_spaces,
+    const XlaComputation& computation,
+    const ModuleLayoutProperties& layout_properties,
     std::function<absl::StatusOr<Shape>(Shape)>
         choose_compact_layout_for_shape_function);
 
@@ -118,10 +85,7 @@ absl::StatusOr<std::pair<std::vector<Shape>, Shape>> LayoutModesToXlaShapes(
 // * Modifies `build_options` to have the correct result_layout set or unset
 absl::StatusOr<std::pair<std::vector<Shape>, std::vector<const Shape*>>>
 LayoutModesToXla(const XlaComputation& computation,
-                 std::vector<LayoutMode> arg_layout_modes,
-                 std::vector<LayoutMode> out_layout_modes,
-                 const std::vector<MemorySpaceColor>& arg_memory_spaces,
-                 const std::vector<MemorySpaceColor>& out_memory_spaces,
+                 const ModuleLayoutProperties& layout_properties,
                  std::function<absl::StatusOr<Shape>(Shape)>
                      choose_compact_layout_for_shape_function,
                  ExecutableBuildOptions& build_options);
